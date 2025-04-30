@@ -104,7 +104,11 @@ def process_audio_file(file_path, output_dir=None, config=None):
         print(f"保存语音片段: {output_file}, 时长: {duration_ms}ms")
     
     # 创建VAD配置
-    vad_config = config if config else VadConfig()
+    vad_config = config if config else VadConfig(
+        positive_speech_threshold=0.8,
+        negative_speech_threshold=0.3,
+        frame_samples=512,  # 确保与Silero VAD模型兼容 (32ms at 16kHz)
+    )
     
     # 创建VAD检测器
     detector = RealTimeVadDetector(
@@ -114,7 +118,7 @@ def process_audio_file(file_path, output_dir=None, config=None):
     )
     
     # 设置批处理的块大小
-    chunk_size = 1600  # 100ms at 16kHz
+    chunk_size = 1600  # 100ms at 16kHz (16000 * 0.1 = 1600 samples)
     
     try:
         # 启动VAD检测
@@ -154,6 +158,7 @@ def main():
     config = VadConfig(
         positive_speech_threshold=args.threshold,
         negative_speech_threshold=args.threshold * 0.4,
+        frame_samples=512,  # 确保与Silero VAD模型兼容 (32ms at 16kHz)
     )
     
     # 处理每个文件

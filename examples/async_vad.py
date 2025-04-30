@@ -135,13 +135,13 @@ class AsyncVadProcessor:
             self.speech_queue.task_done()
 
 
-async def file_audio_stream(file_path, chunk_size=1600, sample_rate=16000):
+async def file_audio_stream(file_path, chunk_size=512, sample_rate=16000):
     """
     从文件创建音频流生成器
     
     Args:
         file_path: 音频文件路径
-        chunk_size: 块大小（采样点数）
+        chunk_size: 块大小（采样点数，默认512约32ms@16kHz）
         sample_rate: 目标采样率
         
     Yields:
@@ -198,7 +198,8 @@ async def async_main():
     config = VadConfig(
         positive_speech_threshold=args.threshold,
         negative_speech_threshold=args.threshold * 0.4,
-        min_speech_frames=2  # 降低最小语音帧数，使检测更敏感
+        min_speech_frames=2,  # 降低最小语音帧数，使检测更敏感
+        frame_samples=512,  # 确保与Silero VAD模型兼容 (32ms at 16kHz)
     )
     
     # 创建异步VAD处理器

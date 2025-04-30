@@ -45,7 +45,7 @@ def on_start_speaking():
     print("检测到开始说话")
 
 
-def simulate_streaming(audio_file, chunk_size=1600, sample_rate=16000):
+def simulate_streaming(audio_file, chunk_size=512, sample_rate=16000):
     """
     模拟实时流式音频，从文件中读取并分块返回
     
@@ -93,7 +93,7 @@ def simulate_streaming(audio_file, chunk_size=1600, sample_rate=16000):
 def main():
     # 检查命令行参数
     if len(sys.argv) < 2:
-        print("用法: python simple_vad.py <音频文件路径>")
+        print("用法: python simple_vad.py <音频文件绝对路径>")
         return
     
     audio_file = sys.argv[1]
@@ -105,7 +105,7 @@ def main():
     config = VadConfig(
         positive_speech_threshold=0.8,  # 调整语音检测阈值
         negative_speech_threshold=0.3,
-        min_speech_frames=2,  # 至少需要2帧才算语音（约192ms）
+        redemption_frames=6, # 至少需要6帧连续置信度小于0.3才算结束（6x32ms=192ms）
     )
     
     # 创建VAD检测器
@@ -119,7 +119,7 @@ def main():
     detector.start_detect()
     
     # 设置音频参数
-    CHUNK = 1600  # 约100ms
+    CHUNK = 512  # 约100ms
     SAMPLE_RATE = 16000
     
     print(f"开始处理音频文件: {audio_file}")

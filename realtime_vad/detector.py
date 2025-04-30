@@ -18,10 +18,10 @@ class VadConfig:
     """VAD配置参数"""
     positive_speech_threshold: float = 0.85  # 语音检测的正阈值
     negative_speech_threshold: float = 0.35  # 语音检测的负阈值
-    redemption_frames: int = 8  # 保留多少帧再判断是否真正结束语音 (8 * 96ms = 768ms)
-    min_speech_frames: int = 3  # 最少需要多少帧才算有效语音 (3 * 96ms = 288ms)
+    redemption_frames: int = 8  # 保留多少帧再判断是否真正结束语音 (8 * 32ms = 256ms)
+    min_speech_frames: int = 3  # 最少需要多少帧才算有效语音 (3 * 64ms = 192ms)
     pre_speech_pad_frames: int = 1  # 在语音前额外加入多少帧
-    frame_samples: int = 1536  # 每帧采样点数 (96ms at 16kHz)
+    frame_samples: int = 512  # 每帧采样点数 (32ms at 16kHz)
     vad_interval: float = 0.032  # VAD检测间隔，单位秒
 
 

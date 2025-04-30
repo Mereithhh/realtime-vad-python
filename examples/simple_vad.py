@@ -14,6 +14,7 @@ import numpy as np
 import torch
 import torchaudio
 import torchaudio.functional as F
+import pyaudio
 
 # 添加项目根目录到系统路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -91,53 +92,43 @@ def simulate_streaming(audio_file, chunk_size=512, sample_rate=16000):
 
 
 def main():
-    # 检查命令行参数
-    if len(sys.argv) < 2:
-        print("用法: python simple_vad.py <音频文件绝对路径>")
-        return
-    
-    audio_file = sys.argv[1]
-    if not Path(audio_file).exists():
-        print(f"错误: 音频文件 '{audio_file}' 不存在")
-        return
-    
-    # 创建VAD配置
-    config = VadConfig(
-        positive_speech_threshold=0.8,  # 调整语音检测阈值
-        negative_speech_threshold=0.3,
-        redemption_frames=6, # 至少需要6帧连续置信度小于0.3才算结束（6x32ms=192ms）
-    )
-    
-    # 创建VAD检测器
+    # 初始化VAD检测器，使用默认内置模型
     detector = RealTimeVadDetector(
-        config=config,
         on_speech_data=on_speech_data,
-        on_start_speaking=on_start_speaking
+        on_start_speaking=on_start_speaking,
+        use_default_model=True  # 使用默认内置模型
     )
     
-    # 启动VAD检测线程
+    # 启动VAD检测
     detector.start_detect()
     
-    # 设置音频参数
-    CHUNK = 512  # 约100ms
-    SAMPLE_RATE = 16000
+    # 设置PyAudio
+    p = pyaudio.PyAudio()
+    stream = p.open(
+        format=pyaudio.paInt16,
+        channels=1,
+        rate=16000,
+        input=True,
+        frames_per_buffer=512
+    )
     
-    print(f"开始处理音频文件: {audio_file}")
+    print("开始录音和VAD检测，按Ctrl+C结束...")
     
     try:
-        # 模拟实时流处理
-        for audio_chunk in simulate_streaming(audio_file, CHUNK, SAMPLE_RATE):
-            # 将音频数据送入VAD检测器
-            detector.put_pcm_data(audio_chunk)
-            
+        while True:
+            # 读取音频数据
+            data = stream.read(512)
+            # 将数据送入VAD检测器
+            detector.put_pcm_data(data)
+            time.sleep(0.01)  # 防止CPU占用过高
     except KeyboardInterrupt:
-        print("处理被中断")
-    except Exception as e:
-        print(f"处理错误: {e}")
+        print("程序结束")
     finally:
-        # 关闭资源
+        # 清理资源
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
         detector.close()
-        print("处理完成")
 
 
 if __name__ == "__main__":

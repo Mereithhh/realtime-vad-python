@@ -11,6 +11,10 @@ setup(
     description="Python实时VAD检测库，基于Silero VAD模型",
     author="Mereith",
     packages=find_packages(exclude=["examples", "tests"]),
+    package_data={
+        "": ["files/*"],  # 包含根目录下的files目录
+    },
+    include_package_data=True,
     install_requires=[
         "numpy",
         "torch",

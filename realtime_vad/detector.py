@@ -4,14 +4,30 @@
 
 import threading
 import time
+import os
+import pathlib
 from dataclasses import dataclass
 from typing import Callable, List, Optional, Tuple
+import importlib.resources
+import pkg_resources
 
 import numpy as np
 import torch
 
 from .audio_cache import AudioCache
 
+# 获取当前包的路径及模型默认路径
+PACKAGE_ROOT = pathlib.Path(__file__).parent.parent.absolute()
+DEFAULT_MODEL_PATH = os.path.join(PACKAGE_ROOT, "files", "silero_vad.jit")
+
+# 尝试通过包资源查找模型文件
+try:
+    MODEL_RESOURCE_PATH = pkg_resources.resource_filename("realtime_vad", os.path.join("..", "files", "silero_vad.jit"))
+    if os.path.exists(MODEL_RESOURCE_PATH):
+        DEFAULT_MODEL_PATH = MODEL_RESOURCE_PATH
+except (ImportError, ModuleNotFoundError):
+    # 如果包资源查找失败，保持默认路径
+    pass
 
 @dataclass
 class VadConfig:
@@ -33,7 +49,8 @@ class RealTimeVadDetector:
         config: Optional[VadConfig] = None, 
         on_speech_data: Optional[Callable[[bytes, int], None]] = None,
         on_start_speaking: Optional[Callable[[], None]] = None,
-        model_path: Optional[str] = None
+        model_path: Optional[str] = None,
+        use_default_model: bool = True
     ):
         """
         初始化实时VAD检测器
@@ -42,14 +59,15 @@ class RealTimeVadDetector:
             config: VAD配置，如果为None则使用默认配置
             on_speech_data: 当检测到语音片段时的回调函数，接收音频数据和时长(ms)
             on_start_speaking: 当检测到开始说话时的回调函数
-            model_path: 模型路径，如果为None则从torch hub下载
+            model_path: 模型路径，如果为None则使用默认内置模型或从torch hub下载
+            use_default_model: 是否使用默认内置模型，设为False则从torch hub下载
         """
         self.config = config if config else VadConfig()
         self.on_speech_data = on_speech_data
         self.on_start_speaking = on_start_speaking
         
         # 初始化模型
-        self._init_model(model_path)
+        self._init_model(model_path, use_default_model)
         
         # 初始化音频缓存
         self.input_audio_cache = AudioCache()
@@ -65,21 +83,26 @@ class RealTimeVadDetector:
         self.vad_thread = None
         self.is_closed = False
 
-    def _init_model(self, model_path: Optional[str] = None) -> None:
+    def _init_model(self, model_path: Optional[str] = None, use_default_model: bool = True) -> None:
         """
         初始化Silero VAD模型
         
         Args:
-            model_path: 模型路径，如果为None则从torch hub下载
+            model_path: 模型路径，如果为None则使用默认路径或从torch hub下载
+            use_default_model: 是否使用默认内置模型，设为False则从torch hub下载
         """
         # 设置单线程运行以避免性能问题
         torch.set_num_threads(1)
         
         if model_path:
-            # 从本地加载模型
+            # 使用指定的模型路径
             self.model = torch.jit.load(model_path)
+        elif use_default_model and os.path.exists(DEFAULT_MODEL_PATH):
+            # 使用默认内置模型
+            self.model = torch.jit.load(DEFAULT_MODEL_PATH)
         else:
             # 从torch hub下载模型
+            print("未找到默认模型，从torch hub下载中...")
             model, utils = torch.hub.load(
                 repo_or_dir='snakers4/silero-vad',
                 model='silero_vad',

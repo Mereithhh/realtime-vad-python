@@ -8,26 +8,15 @@ import os
 import pathlib
 from dataclasses import dataclass
 from typing import Callable, List, Optional, Tuple
-import importlib.resources
-import pkg_resources
 
 import numpy as np
 import torch
 
 from .audio_cache import AudioCache
 
-# 获取当前包的路径及模型默认路径
-PACKAGE_ROOT = pathlib.Path(__file__).parent.parent.absolute()
-DEFAULT_MODEL_PATH = os.path.join(PACKAGE_ROOT, "files", "silero_vad.jit")
-
-# 尝试通过包资源查找模型文件
-try:
-    MODEL_RESOURCE_PATH = pkg_resources.resource_filename("realtime_vad", os.path.join("..", "files", "silero_vad.jit"))
-    if os.path.exists(MODEL_RESOURCE_PATH):
-        DEFAULT_MODEL_PATH = MODEL_RESOURCE_PATH
-except (ImportError, ModuleNotFoundError):
-    # 如果包资源查找失败，保持默认路径
-    pass
+# 获取模型默认路径
+PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_MODEL_PATH = os.path.join(PACKAGE_DIR, "files", "silero_vad.jit")
 
 @dataclass
 class VadConfig:

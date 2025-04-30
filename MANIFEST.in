@@ -1,2 +1,3 @@
-include files/*
-recursive-include files *.jit 
+include README.md
+include LICENSE
+recursive-include realtime_vad/files *.jit 

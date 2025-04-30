@@ -1,10 +1,16 @@
+#!/usr/bin/env python3
+"""
+下载Silero VAD模型并保存为JIT格式
+"""
+
 import os
 import pathlib
 import torch
 
 # 获取当前目录路径
-CURRENT_DIR = pathlib.Path(__file__).parent.absolute()
-MODEL_DIR = os.path.join(CURRENT_DIR, "files")
+SCRIPT_DIR = pathlib.Path(__file__).parent.absolute()
+PROJECT_ROOT = SCRIPT_DIR.parent
+MODEL_DIR = os.path.join(PROJECT_ROOT, "realtime_vad", "files")
 MODEL_PATH = os.path.join(MODEL_DIR, "silero_vad.jit")
 
 def download_and_save_model():

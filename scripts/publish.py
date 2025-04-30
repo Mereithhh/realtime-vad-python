@@ -49,14 +49,26 @@ def upload_test():
         [sys.executable, "-m", "pip", "install", "--upgrade", "twine"], 
         check=True
     )
-    subprocess.run(
-        [sys.executable, "-m", "twine", "upload", "--repository", "testpypi", "dist/*"], 
-        cwd=PROJECT_ROOT,
-        check=True
-    )
-    print("测试版本已上传到 TestPyPI")
-    print("可以使用以下命令安装测试版本:")
-    print("pip install --index-url https://test.pypi.org/simple/ realtime-vad-python")
+    # 使用 --skip-existing 选项避免重复上传错误，添加 --verbose 获取更多错误信息
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "twine", "upload", "--repository", "testpypi", 
+             "--skip-existing", "--verbose", "dist/*"], 
+            cwd=PROJECT_ROOT,
+            check=True
+        )
+        print("测试版本已上传到 TestPyPI")
+        print("可以使用以下命令安装测试版本:")
+        print("pip install --index-url https://test.pypi.org/simple/ realtime-vad-python")
+    except subprocess.CalledProcessError:
+        print("\n上传失败。可能的原因：")
+        print("1. API 令牌认证问题 - 请检查你的 ~/.pypirc 文件")
+        print("2. 同版本包已存在 - 尝试更新版本号")
+        print("3. 包名已被占用 - 尝试更改包名")
+        print("\n要使用 API 令牌认证，可添加环境变量:")
+        print("export TWINE_USERNAME=__token__")
+        print("export TWINE_PASSWORD=你的API令牌")
+        sys.exit(1)
 
 def upload_prod():
     """上传到PyPI"""
@@ -65,14 +77,24 @@ def upload_prod():
         [sys.executable, "-m", "pip", "install", "--upgrade", "twine"], 
         check=True
     )
-    subprocess.run(
-        [sys.executable, "-m", "twine", "upload", "dist/*"], 
-        cwd=PROJECT_ROOT,
-        check=True
-    )
-    print("已成功上传到PyPI!")
-    print("可以使用以下命令安装:")
-    print("pip install realtime-vad-python")
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "twine", "upload", "--skip-existing", "--verbose", "dist/*"], 
+            cwd=PROJECT_ROOT,
+            check=True
+        )
+        print("已成功上传到PyPI!")
+        print("可以使用以下命令安装:")
+        print("pip install realtime-vad-python")
+    except subprocess.CalledProcessError:
+        print("\n上传失败。可能的原因：")
+        print("1. API 令牌认证问题 - 请检查你的 ~/.pypirc 文件")
+        print("2. 同版本包已存在 - 尝试更新版本号")
+        print("3. 包名已被占用 - 尝试更改包名")
+        print("\n要使用 API 令牌认证，可添加环境变量:")
+        print("export TWINE_USERNAME=__token__")
+        print("export TWINE_PASSWORD=你的API令牌")
+        sys.exit(1)
 
 def main():
     """主函数"""
